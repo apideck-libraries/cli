@@ -1,7 +1,10 @@
 // internal/output/rows.go
 package output
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // extractRows normalizes data into a slice of row maps and an ordered list of
 // field names. When selectedFields is non-empty only those fields are included.
@@ -43,4 +46,23 @@ func extractRows(data any, selectedFields []string) ([]map[string]any, []string)
 	}
 
 	return rows, fields
+}
+
+// formatValue converts a value to a human-readable string suitable for table
+// and CSV output. Maps and slices are serialized as compact JSON instead of
+// Go's default fmt representation. Nil values render as an empty string.
+func formatValue(v any) string {
+	if v == nil {
+		return ""
+	}
+	switch v.(type) {
+	case map[string]any, []any:
+		b, err := json.Marshal(v)
+		if err != nil {
+			return fmt.Sprintf("%v", v)
+		}
+		return string(b)
+	default:
+		return fmt.Sprintf("%v", v)
+	}
 }

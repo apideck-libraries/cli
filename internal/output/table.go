@@ -36,7 +36,7 @@ func (f *TableFormatter) Format(resp *spec.APIResponse) error {
 	}
 	for _, row := range rows {
 		for i, field := range fields {
-			cell := fmt.Sprintf("%v", row[field])
+			cell := formatValue(row[field])
 			if len(cell) > colWidths[i] {
 				colWidths[i] = len(cell)
 			}
@@ -61,7 +61,7 @@ func (f *TableFormatter) Format(resp *spec.APIResponse) error {
 	for _, row := range rows {
 		cells := make([]string, len(fields))
 		for i, field := range fields {
-			cell := fmt.Sprintf("%v", row[field])
+			cell := formatValue(row[field])
 			cells[i] = padRight(cell, colWidths[i])
 		}
 		fmt.Fprintln(f.w, strings.Join(cells, "  "))

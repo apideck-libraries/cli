@@ -3,7 +3,6 @@ package output
 
 import (
 	"encoding/csv"
-	"fmt"
 	"io"
 
 	"github.com/apideck-io/cli/internal/spec"
@@ -34,7 +33,7 @@ func (f *CSVFormatter) Format(resp *spec.APIResponse) error {
 	record := make([]string, len(fields))
 	for _, row := range rows {
 		for i, field := range fields {
-			record[i] = fmt.Sprintf("%v", row[field])
+			record[i] = formatValue(row[field])
 		}
 		if err := w.Write(record); err != nil {
 			return err

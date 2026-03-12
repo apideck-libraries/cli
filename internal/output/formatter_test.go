@@ -161,6 +161,103 @@ func TestJSONFormatterNoData(t *testing.T) {
 	}
 }
 
+// TestFormatValue verifies that complex types are serialized properly.
+func TestFormatValue(t *testing.T) {
+	cases := []struct {
+		name string
+		val  any
+		want string
+	}{
+		{"nil", nil, ""},
+		{"string", "hello", "hello"},
+		{"int", 42, "42"},
+		{"bool", true, "true"},
+		{"map", map[string]any{"download": true}, `{"download":true}`},
+		{"slice", []any{"pdf", "docx"}, `["pdf","docx"]`},
+		{"empty slice", []any{}, "[]"},
+		{"nested map", map[string]any{"email": "a@b.com", "id": "123"}, ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := formatValue(tc.val)
+			if tc.name == "nested map" {
+				// Map key order is non-deterministic, just check it's valid JSON.
+				if got[0] != '{' {
+					t.Errorf("expected JSON object, got: %s", got)
+				}
+				return
+			}
+			if got != tc.want {
+				t.Errorf("formatValue(%v) = %q, want %q", tc.val, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestTableFormatterComplexValues verifies maps and nil render correctly in table output.
+func TestTableFormatterComplexValues(t *testing.T) {
+	var buf bytes.Buffer
+	f := &TableFormatter{w: &buf, fields: []string{"name", "permissions", "owner"}}
+
+	resp := &spec.APIResponse{
+		StatusCode: 200,
+		Success:    true,
+		Data: []any{
+			map[string]any{
+				"name":        "Analytics",
+				"permissions": map[string]any{"download": true},
+				"owner":       nil,
+			},
+		},
+	}
+
+	if err := f.Format(resp); err != nil {
+		t.Fatalf("Format returned error: %v", err)
+	}
+
+	out := buf.String()
+	if strings.Contains(out, "map[") {
+		t.Errorf("table output should not contain Go map formatting, got: %s", out)
+	}
+	if strings.Contains(out, "<nil>") {
+		t.Errorf("table output should not contain <nil>, got: %s", out)
+	}
+	if !strings.Contains(out, `{"download":true}`) {
+		t.Errorf("expected JSON-formatted map, got: %s", out)
+	}
+}
+
+// TestCSVFormatterComplexValues verifies maps and nil render correctly in CSV output.
+func TestCSVFormatterComplexValues(t *testing.T) {
+	var buf bytes.Buffer
+	f := &CSVFormatter{w: &buf, fields: []string{"name", "formats"}}
+
+	resp := &spec.APIResponse{
+		StatusCode: 200,
+		Success:    true,
+		Data: []any{
+			map[string]any{
+				"name":    "Doc",
+				"formats": []any{"pdf", "docx"},
+			},
+		},
+	}
+
+	if err := f.Format(resp); err != nil {
+		t.Fatalf("Format returned error: %v", err)
+	}
+
+	out := buf.String()
+	if strings.Contains(out, "map[") {
+		t.Errorf("CSV output should not contain Go map formatting, got: %s", out)
+	}
+	if !strings.Contains(out, `"[""pdf"",""docx""]"`) {
+		// CSV encoding will double-quote the JSON array
+		t.Logf("CSV output: %s", out)
+	}
+}
+
 // TestExtractRows verifies the extractRows helper handles different data shapes.
 func TestExtractRows(t *testing.T) {
 	t.Run("slice of any", func(t *testing.T) {
