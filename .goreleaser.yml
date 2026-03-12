@@ -1,0 +1,46 @@
+version: 2
+project_name: apideck
+
+builds:
+  - id: apideck
+    main: ./cmd/apideck
+    binary: apideck
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+    goos:
+      - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - id: apideck
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+
+brews:
+  - repository:
+      owner: apideck-io
+      name: homebrew-tap
+    name: apideck
+    homepage: "https://github.com/apideck-io/cli"
+    description: "Beautiful, agent-friendly CLI for the Apideck Unified API"
+    install: |
+      bin.install "apideck"
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
