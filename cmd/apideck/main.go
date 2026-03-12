@@ -84,7 +84,7 @@ func main() {
 	}
 
 	// Auth + Permission
-	authMgr := auth.NewManager("")
+	authMgr := auth.NewManager(auth.DefaultConfigPath)
 	permEngine := permission.NewEngine(permission.DefaultPermConfigPath())
 
 	// Build executor
@@ -136,12 +136,23 @@ func main() {
 			BaseURL:     apiSpec.BaseURL,
 			Headers:     creds.Headers(),
 			TimeoutSecs: timeoutFlag,
+			UserAgent:   fmt.Sprintf("apideck-cli %s %s", apiSpec.Version, version),
 		})
+
+		// Global flags must not be sent as API query parameters
+		globalFlags := map[string]bool{
+			"output": true, "quiet": true, "raw": true,
+			"service-id": true, "yes": true, "force": true,
+			"timeout": true, "fields": true,
+		}
 
 		// Build query params from flags
 		queryParams := url.Values{}
 		var body any
 		for k, v := range flags {
+			if globalFlags[k] {
+				continue
+			}
 			if k == "__data" || k == "data" {
 				rawData := v
 				if strings.HasPrefix(rawData, "@") {

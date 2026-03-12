@@ -18,9 +18,10 @@ import (
 
 // ClientConfig holds configuration for the HTTP client.
 type ClientConfig struct {
-	BaseURL    string
-	Headers    map[string]string
+	BaseURL     string
+	Headers     map[string]string
 	TimeoutSecs int
+	UserAgent   string
 }
 
 // Client wraps retryablehttp.Client with Apideck-specific behavior.
@@ -91,6 +92,9 @@ func (c *Client) Do(method, path string, queryParams url.Values, body any) (*spe
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
+	if c.cfg.UserAgent != "" {
+		req.Header.Set("User-Agent", c.cfg.UserAgent)
+	}
 
 	resp, err := c.retryClient.Do(req)
 	if err != nil {

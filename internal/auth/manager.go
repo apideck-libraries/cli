@@ -41,8 +41,13 @@ type Manager struct {
 }
 
 // NewManager creates a Manager using the given config file path.
+// If the path is empty, DefaultConfigPath is used.
+// A leading ~ is expanded to the user's home directory.
 func NewManager(configPath string) *Manager {
-	return &Manager{ConfigPath: configPath}
+	if configPath == "" {
+		configPath = DefaultConfigPath
+	}
+	return &Manager{ConfigPath: expandPath(configPath)}
 }
 
 // Resolve returns credentials using the resolution chain: env vars > config file > error.
