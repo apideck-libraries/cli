@@ -8,8 +8,9 @@ import (
 )
 
 // lightDark is a helper that picks light or dark color based on terminal background.
-// It detects the background once at package init time.
-var lightDark lipgloss.LightDarkFunc
+// It detects the background once at package init time. Initialized with a dark
+// default so that package-level style vars are safe to evaluate before init runs.
+var lightDark = lipgloss.LightDark(true) // default: dark background
 
 func init() {
 	hasDark := lipgloss.HasDarkBackground(os.Stdin, os.Stdout)
