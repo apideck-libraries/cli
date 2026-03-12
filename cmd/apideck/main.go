@@ -7,6 +7,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/charmbracelet/huh"
+
 	"github.com/apideck-io/cli/internal/apiclient"
 	"github.com/apideck-io/cli/internal/auth"
 	"github.com/apideck-io/cli/internal/output"
@@ -92,10 +94,15 @@ func main() {
 				if !ui.IsTTY() {
 					return fmt.Errorf("write operation %s requires --yes flag in non-interactive mode", op.ID)
 				}
-				fmt.Printf("⚠ Write operation: %s %s\nProceed? [y/N] ", op.Method, op.Path)
-				var answer string
-				fmt.Scanln(&answer)
-				if strings.ToLower(answer) != "y" {
+				var confirmed bool
+				err := huh.NewConfirm().
+					Title(fmt.Sprintf("%s %s", op.Method, op.Path)).
+					Description("This write operation requires confirmation.").
+					Affirmative("Yes").
+					Negative("No").
+					Value(&confirmed).
+					Run()
+				if err != nil || !confirmed {
 					return fmt.Errorf("operation cancelled")
 				}
 			}
@@ -132,18 +139,17 @@ func main() {
 		queryParams := url.Values{}
 		var body any
 		for k, v := range flags {
-			if k == "__data" {
-				var parsed any
-				if err := json.Unmarshal([]byte(v), &parsed); err != nil {
-					return fmt.Errorf("invalid JSON body: %w", err)
+			if k == "__data" || k == "data" {
+				rawData := v
+				if strings.HasPrefix(rawData, "@") {
+					fileData, err := os.ReadFile(rawData[1:])
+					if err != nil {
+						return fmt.Errorf("read data file %s: %w", rawData[1:], err)
+					}
+					rawData = string(fileData)
 				}
-				body = parsed
-				continue
-			}
-			if k == "data" {
-				// --data flag: parse as JSON body
 				var parsed any
-				if err := json.Unmarshal([]byte(v), &parsed); err != nil {
+				if err := json.Unmarshal([]byte(rawData), &parsed); err != nil {
 					return fmt.Errorf("invalid JSON body: %w", err)
 				}
 				body = parsed
