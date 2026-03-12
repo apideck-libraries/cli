@@ -9,8 +9,11 @@ import (
 
 	"github.com/charmbracelet/huh"
 
+	"time"
+
 	"github.com/apideck-io/cli/internal/apiclient"
 	"github.com/apideck-io/cli/internal/auth"
+	"github.com/apideck-io/cli/internal/history"
 	"github.com/apideck-io/cli/internal/output"
 	"github.com/apideck-io/cli/internal/permission"
 	"github.com/apideck-io/cli/internal/router"
@@ -168,10 +171,15 @@ func main() {
 		}
 
 		// Execute
+		start := time.Now()
 		resp, err := client.Do(op.Method, path, queryParams, body)
+		duration := time.Since(start)
 		if err != nil {
 			return err
 		}
+
+		// Log to history
+		history.Log(history.NewEntry(op.Method, path, resp.StatusCode, duration, creds.ServiceID))
 
 		// Handle error responses
 		if !resp.Success && resp.Error != nil {
