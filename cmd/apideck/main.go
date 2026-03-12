@@ -211,6 +211,9 @@ func main() {
 	rootCmd.AddCommand(newSyncCmd(cache))
 	rootCmd.AddCommand(newAgentPromptCmd(apiSpec))
 	rootCmd.AddCommand(newInfoCmd(apiSpec, cache))
+	rootCmd.AddCommand(newHistoryCmd())
+	rootCmd.AddCommand(newPermissionsCmd())
+	rootCmd.AddCommand(newSkillCmd(apiSpec))
 
 	// Auth commands
 	configPath := authMgr.ConfigPath
