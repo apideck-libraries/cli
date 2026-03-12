@@ -27,7 +27,7 @@ archives:
 
 brews:
   - repository:
-      owner: apideck-io
+      owner: apideck-libraries
       name: homebrew-tap
     name: apideck
     homepage: "https://github.com/apideck-io/cli"
