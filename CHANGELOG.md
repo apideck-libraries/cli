@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.2](https://github.com/apideck-libraries/cli/compare/v1.0.1...v1.0.2) (2026-03-13)
+
+
+### Bug Fixes
+
+* restore permissions block in release-please workflow ([50d1ac1](https://github.com/apideck-libraries/cli/commit/50d1ac1350952d1923b422700e275b4fee556c50))
+* use HOMEBREW_TAP_TOKEN instead of separate release token ([4db38f6](https://github.com/apideck-libraries/cli/commit/4db38f62579c4a37e8bad6a62afbba244ce46a10))
+* use PAT in Release Please to trigger release workflow ([8b05152](https://github.com/apideck-libraries/cli/commit/8b05152764a1124037bfd6d263faf55b28dd1668))
+
 ## [1.0.1](https://github.com/apideck-libraries/cli/compare/v1.0.0...v1.0.1) (2026-03-13)
 
 
