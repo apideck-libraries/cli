@@ -29,6 +29,7 @@ brews:
   - repository:
       owner: apideck-libraries
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     name: apideck
     homepage: "https://github.com/apideck-io/cli"
     description: "Beautiful, agent-friendly CLI for the Apideck Unified API"
