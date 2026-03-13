@@ -4,7 +4,7 @@ Beautiful, agentic-friendly CLI for [Apideck Unified API](https://www.apideck.co
 
 OpenAPI is the source of truth — no SDK dependency, no code generation. Humans get a polished TUI. AI agents get token-efficient progressive disclosure.
 
-> Read the blog post: [TODO: Add blog post link]
+> Read the [blog post](https://www.apideck.com/blog/mcp-server-eating-context-window-cli-alternative)
 
 ## Features
 
