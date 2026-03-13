@@ -31,7 +31,7 @@ go install github.com/apideck-libraries/cli/cmd/apideck@latest
 ### Docker
 
 ```bash
-docker run -e APIDECK_API_KEY=xxx apideck/cli accounting invoices list
+docker run -e APIDECK_API_KEY=xxx -e APIDECK_APP_ID=xxx -e APIDECK_CONSUMER_ID=xxx apideck/cli accounting invoices list
 ```
 
 ### From source
