@@ -47,3 +47,41 @@ func DefaultPermConfigPath() string {
 	home, _ := os.UserHomeDir()
 	return filepath.Join(home, ".apideck-cli", "permissions.yaml")
 }
+
+// defaultPermConfigTemplate is the YAML content written by WriteDefaultConfig.
+const defaultPermConfigTemplate = `# Apideck CLI permission configuration
+# Controls how different API operations are handled.
+#
+# Permission levels:
+#   read      - GET requests
+#   write     - POST/PUT/PATCH requests
+#   dangerous - DELETE requests
+#
+# Actions:
+#   allow  - execute without prompting
+#   prompt - ask for confirmation before executing
+#   block  - prevent execution entirely
+
+defaults:
+  read: allow
+  write: prompt
+  dangerous: block
+
+# Per-operation overrides (keyed by operation ID):
+# overrides:
+#   invoices-delete: allow    # skip confirmation for this specific DELETE
+#   invoices-list: block      # block a specific GET
+`
+
+// WriteDefaultConfig creates a permissions config file with built-in defaults
+// at the given path. It does nothing if the file already exists.
+func WriteDefaultConfig(path string) error {
+	if _, err := os.Stat(path); err == nil {
+		return nil
+	}
+	dir := filepath.Dir(path)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(defaultPermConfigTemplate), 0600)
+}

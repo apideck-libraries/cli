@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/apideck-io/cli/internal/permission"
 	"github.com/apideck-io/cli/internal/ui"
 	"github.com/charmbracelet/huh"
 )
@@ -52,6 +53,14 @@ func RunSetup(configPath string) error {
 	}
 
 	fmt.Println(ui.SuccessMsg(fmt.Sprintf("Credentials saved to %s", configPath)))
+
+	permPath := permission.DefaultPermConfigPath()
+	if err := permission.WriteDefaultConfig(permPath); err != nil {
+		fmt.Println(ui.Dim.Render(fmt.Sprintf("Could not create permissions config: %s", err)))
+	} else {
+		fmt.Println(ui.SuccessMsg(fmt.Sprintf("Permissions config created at %s", permPath)))
+	}
+
 	return nil
 }
 
