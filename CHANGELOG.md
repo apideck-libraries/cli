@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/apideck-libraries/cli/compare/v1.0.0...v1.0.1) (2026-03-13)
+
+
+### Bug Fixes
+
+* add token to GoReleaser brew config for cross-repo push ([30f9445](https://github.com/apideck-libraries/cli/commit/30f9445cfb83b5354d3f971db6facf53500bb0e5))
+* add token to GoReleaser brew config for cross-repo push ([a8f8a0f](https://github.com/apideck-libraries/cli/commit/a8f8a0f93b0918312f18571e7b370d9a9c6939f2))
+
 ## 1.0.0 (2026-03-13)
 
 
