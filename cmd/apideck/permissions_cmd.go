@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/apideck-io/cli/internal/permission"
 	"github.com/apideck-io/cli/internal/ui"
@@ -14,8 +15,8 @@ func newPermissionsCmd() *cobra.Command {
 		Short: "Show permission configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			path := permission.DefaultPermConfigPath()
-			cfg, err := permission.LoadPermConfig(path)
-			if err != nil {
+
+			if _, err := os.Stat(path); os.IsNotExist(err) {
 				fmt.Println(ui.Dim.Render("No permissions config found."))
 				fmt.Println(ui.Dim.Render(fmt.Sprintf("Create one at: %s", path)))
 				fmt.Println()
@@ -24,6 +25,11 @@ func newPermissionsCmd() *cobra.Command {
 				fmt.Println("  write (POST/PUT): confirmation prompt")
 				fmt.Println("  dangerous (DELETE): blocked")
 				return nil
+			}
+
+			cfg, err := permission.LoadPermConfig(path)
+			if err != nil {
+				return fmt.Errorf("failed to load permissions config: %w", err)
 			}
 			fmt.Println(ui.PrimaryBold.Render("Permission Defaults:"))
 			for level, action := range cfg.Defaults {

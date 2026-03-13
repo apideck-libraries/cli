@@ -132,6 +132,36 @@ func TestLoadPermConfigMissingFile(t *testing.T) {
 	}
 }
 
+// TestWriteDefaultConfig verifies that WriteDefaultConfig creates a valid config
+// and is idempotent (does not overwrite an existing file).
+func TestWriteDefaultConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sub", "permissions.yaml")
+
+	// Creates file and parent directory.
+	if err := WriteDefaultConfig(path); err != nil {
+		t.Fatalf("first call failed: %v", err)
+	}
+
+	cfg, err := LoadPermConfig(path)
+	if err != nil {
+		t.Fatalf("failed to load generated config: %v", err)
+	}
+	if cfg.Defaults["read"] != "allow" || cfg.Defaults["write"] != "prompt" || cfg.Defaults["dangerous"] != "block" {
+		t.Errorf("unexpected defaults: %v", cfg.Defaults)
+	}
+
+	// Overwrite file with custom content, then call again -- should not overwrite.
+	os.WriteFile(path, []byte("defaults:\n  read: block\n"), 0600)
+	if err := WriteDefaultConfig(path); err != nil {
+		t.Fatalf("idempotent call failed: %v", err)
+	}
+	cfg2, _ := LoadPermConfig(path)
+	if cfg2.Defaults["read"] != "block" {
+		t.Error("WriteDefaultConfig overwrote existing file")
+	}
+}
+
 // TestActionString verifies Action.String() returns correct labels.
 func TestActionString(t *testing.T) {
 	cases := []struct {
