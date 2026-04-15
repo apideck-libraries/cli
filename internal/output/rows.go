@@ -4,6 +4,7 @@ package output
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 )
 
 // extractRows normalizes data into a slice of row maps and an ordered list of
@@ -28,14 +29,15 @@ func extractRows(data any, selectedFields []string) ([]map[string]any, []string)
 	case map[string]any:
 		rows = []map[string]any{v}
 	default:
-		// Unsupported shape — return a single row with the stringified value.
+		// Unsupported shape -- return a single row with the stringified value.
 		rows = []map[string]any{{"value": fmt.Sprintf("%v", data)}}
 	}
 
 	// Determine column order.
 	fields := selectedFields
 	if len(fields) == 0 && len(rows) > 0 {
-		// Auto-detect from the first row, preserving insertion order.
+		// Auto-detect from the first row. Sort scalars before complex types
+		// so the most useful columns appear first in the table.
 		seen := map[string]bool{}
 		for k := range rows[0] {
 			if !seen[k] {
@@ -43,9 +45,27 @@ func extractRows(data any, selectedFields []string) ([]map[string]any, []string)
 				seen[k] = true
 			}
 		}
+		first := rows[0]
+		sort.SliceStable(fields, func(i, j int) bool {
+			iComplex := isComplex(first[fields[i]])
+			jComplex := isComplex(first[fields[j]])
+			if iComplex != jComplex {
+				return !iComplex // scalars first
+			}
+			return false // preserve relative order
+		})
 	}
 
 	return rows, fields
+}
+
+// isComplex returns true for maps and slices (nested/array values).
+func isComplex(v any) bool {
+	switch v.(type) {
+	case map[string]any, []any:
+		return true
+	}
+	return false
 }
 
 // formatValue converts a value to a human-readable string suitable for table
