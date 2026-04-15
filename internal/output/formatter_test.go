@@ -320,7 +320,12 @@ func TestBudgetColumns(t *testing.T) {
 // TestTableFormatterTruncatesLongValues verifies table output truncates long nested values.
 func TestTableFormatterTruncatesLongValues(t *testing.T) {
 	var buf bytes.Buffer
-	f := &TableFormatter{w: &buf, fields: []string{"id", "address"}}
+	const testWidth = 80
+	f := &TableFormatter{
+		w:       &buf,
+		fields:  []string{"id", "address"},
+		widthFn: func() int { return testWidth },
+	}
 
 	longAddress := map[string]any{
 		"line1":       "122 E Houston St",
@@ -331,7 +336,7 @@ func TestTableFormatterTruncatesLongValues(t *testing.T) {
 	}
 	resp := &spec.APIResponse{
 		StatusCode: 200,
-		"Success":    true,
+		Success:    true,
 		Data: []any{
 			map[string]any{"id": "1", "address": longAddress},
 		},
@@ -341,15 +346,14 @@ func TestTableFormatterTruncatesLongValues(t *testing.T) {
 		t.Fatalf("Format returned error: %v", err)
 	}
 
-	maxWidth := termWidth()
 	out := buf.String()
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	for _, line := range lines {
-		// Strip ANSI escape sequences and measure rune count (display width).
+		// Strip ANSI escape sequences and measure rune count.
 		plain := stripAnsi(line)
 		runeCount := len([]rune(plain))
-		if runeCount > maxWidth {
-			t.Errorf("line exceeds %d display chars (%d): %s", maxWidth, runeCount, plain)
+		if runeCount > testWidth {
+			t.Errorf("line exceeds %d runes (%d): %s", testWidth, runeCount, plain)
 		}
 	}
 }

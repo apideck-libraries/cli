@@ -23,8 +23,9 @@ const (
 
 // TableFormatter formats an APIResponse as a styled terminal table.
 type TableFormatter struct {
-	w      io.Writer
-	fields []string
+	w       io.Writer
+	fields  []string
+	widthFn func() int // optional; returns terminal width — nil means auto-detect
 }
 
 // Format writes the response data as a lipgloss-styled table.
@@ -36,26 +37,27 @@ func (f *TableFormatter) Format(resp *spec.APIResponse) error {
 		return nil
 	}
 
+	tw := f.getWidth()
+
 	// When fields weren't explicitly selected, drop complex (nested object/array)
 	// columns if there are too many columns to display readably.
 	if len(f.fields) == 0 && len(rows) > 0 {
-		tw := termWidth()
 		fields = pruneComplexFields(fields, rows[0], tw)
 	}
 
 	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(ui.ColorPrimary())
 	dimStyle := lipgloss.NewStyle().Foreground(ui.ColorDim())
 
-	// Calculate natural column widths (minimum = header width), capped at colAbsMax.
+	// Calculate natural column widths in runes (minimum = header width), capped at colAbsMax.
 	colWidths := make([]int, len(fields))
 	for i, h := range fields {
-		colWidths[i] = len(h)
+		colWidths[i] = utf8.RuneCountInString(h)
 	}
 	for _, row := range rows {
 		for i, field := range fields {
 			cell := formatValue(row[field])
-			if len(cell) > colWidths[i] {
-				colWidths[i] = len(cell)
+			if n := utf8.RuneCountInString(cell); n > colWidths[i] {
+				colWidths[i] = n
 			}
 		}
 	}
@@ -66,7 +68,7 @@ func (f *TableFormatter) Format(resp *spec.APIResponse) error {
 	}
 
 	// Shrink columns to fit the terminal width.
-	budgetColumns(colWidths, termWidth())
+	budgetColumns(colWidths, tw)
 
 	// Build and print header.
 	headerCells := make([]string, len(fields))
@@ -95,13 +97,19 @@ func (f *TableFormatter) Format(resp *spec.APIResponse) error {
 	return nil
 }
 
-// termWidth returns the current terminal width, falling back to defaultTTY.
-func termWidth() int {
-	w, _, err := term.GetSize(os.Stdout.Fd())
-	if err != nil || w <= 0 {
-		return defaultTTY
+// getWidth returns the terminal width to use for this formatter.
+// If a custom widthFn was injected it is used; otherwise the width is derived
+// from f.w when it is an *os.File TTY, falling back to defaultTTY.
+func (f *TableFormatter) getWidth() int {
+	if f.widthFn != nil {
+		return f.widthFn()
 	}
-	return w
+	if file, ok := f.w.(*os.File); ok {
+		if w, _, err := term.GetSize(file.Fd()); err == nil && w > 0 {
+			return w
+		}
+	}
+	return defaultTTY
 }
 
 // pruneComplexFields removes complex (nested object/array) fields when the
@@ -184,7 +192,7 @@ func truncate(s string, max int) string {
 	return string(runes[:max-1]) + "\u2026"
 }
 
-// padRight pads s with trailing spaces until it reaches display width w.
+// padRight pads s with trailing spaces until it reaches w runes.
 func padRight(s string, w int) string {
 	n := utf8.RuneCountInString(s)
 	if n >= w {
