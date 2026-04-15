@@ -331,7 +331,7 @@ func TestTableFormatterTruncatesLongValues(t *testing.T) {
 	}
 	resp := &spec.APIResponse{
 		StatusCode: 200,
-		Success:    true,
+		"Success":    true,
 		Data: []any{
 			map[string]any{"id": "1", "address": longAddress},
 		},
@@ -341,14 +341,15 @@ func TestTableFormatterTruncatesLongValues(t *testing.T) {
 		t.Fatalf("Format returned error: %v", err)
 	}
 
+	maxWidth := termWidth()
 	out := buf.String()
 	lines := strings.Split(strings.TrimSpace(out), "\n")
 	for _, line := range lines {
 		// Strip ANSI escape sequences and measure rune count (display width).
 		plain := stripAnsi(line)
 		runeCount := len([]rune(plain))
-		if runeCount > 120 { // generous default terminal width
-			t.Errorf("line exceeds 120 display chars (%d): %s", runeCount, plain)
+		if runeCount > maxWidth {
+			t.Errorf("line exceeds %d display chars (%d): %s", maxWidth, runeCount, plain)
 		}
 	}
 }
