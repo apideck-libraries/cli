@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.3](https://github.com/apideck-libraries/cli/compare/v1.0.2...v1.0.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* make table output fit terminal width ([ab89340](https://github.com/apideck-libraries/cli/commit/ab893401898f6465d4f6dcf64e1ce0ff9bb1e9c5))
+* make table output fit terminal width ([a33df71](https://github.com/apideck-libraries/cli/commit/a33df7114dcf255364ed468c8ef84b0065650b3b))
+* use consistent rune-based width and injectable terminal size ([9cf275d](https://github.com/apideck-libraries/cli/commit/9cf275debdcc65ff6c7f06ce618912b4e55f3f90))
+
 ## [1.0.2](https://github.com/apideck-libraries/cli/compare/v1.0.1...v1.0.2) (2026-03-13)
 
 
