@@ -258,6 +258,126 @@ func TestCSVFormatterComplexValues(t *testing.T) {
 	}
 }
 
+// TestTruncate verifies the truncate helper.
+func TestTruncate(t *testing.T) {
+	cases := []struct {
+		name string
+		s    string
+		max  int
+		want string
+	}{
+		{"fits", "hello", 10, "hello"},
+		{"exact", "hello", 5, "hello"},
+		{"trunc", "hello world", 5, "hell\u2026"},
+		{"min", "hello", 1, "h"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := truncate(tc.s, tc.max)
+			if got != tc.want {
+				t.Errorf("truncate(%q, %d) = %q, want %q", tc.s, tc.max, got, tc.want)
+			}
+		})
+	}
+}
+
+// TestBudgetColumns verifies column budget distribution.
+func TestBudgetColumns(t *testing.T) {
+	t.Run("fits", func(t *testing.T) {
+		widths := []int{10, 10, 10}
+		budgetColumns(widths, 80)
+		total := widths[0] + widths[1] + widths[2] + 4 // 2 gaps * 2
+		if total > 80 {
+			t.Errorf("expected total <= 80, got %d", total)
+		}
+		// Should be unchanged since they fit.
+		if widths[0] != 10 || widths[1] != 10 || widths[2] != 10 {
+			t.Errorf("expected no shrinking, got %v", widths)
+		}
+	})
+
+	t.Run("shrinks widest", func(t *testing.T) {
+		widths := []int{10, 50, 10}
+		budgetColumns(widths, 40)
+		total := widths[0] + widths[1] + widths[2] + 4
+		if total > 40 {
+			t.Errorf("expected total <= 40, got %d", total)
+		}
+	})
+
+	t.Run("respects minimum", func(t *testing.T) {
+		widths := []int{10, 10, 10}
+		budgetColumns(widths, 10) // impossibly tight
+		for _, w := range widths {
+			if w < colMin {
+				t.Errorf("column shrunk below colMin: %d", w)
+			}
+		}
+	})
+}
+
+// TestTableFormatterTruncatesLongValues verifies table output truncates long nested values.
+func TestTableFormatterTruncatesLongValues(t *testing.T) {
+	var buf bytes.Buffer
+	const testWidth = 80
+	f := &TableFormatter{
+		w:       &buf,
+		fields:  []string{"id", "address"},
+		widthFn: func() int { return testWidth },
+	}
+
+	longAddress := map[string]any{
+		"line1":       "122 E Houston St",
+		"city":        "San Antonio",
+		"state":       "TX",
+		"postal_code": "78205",
+		"country":     "US",
+	}
+	resp := &spec.APIResponse{
+		StatusCode: 200,
+		Success:    true,
+		Data: []any{
+			map[string]any{"id": "1", "address": longAddress},
+		},
+	}
+
+	if err := f.Format(resp); err != nil {
+		t.Fatalf("Format returned error: %v", err)
+	}
+
+	out := buf.String()
+	lines := strings.Split(strings.TrimSpace(out), "\n")
+	for _, line := range lines {
+		// Strip ANSI escape sequences and measure rune count.
+		plain := stripAnsi(line)
+		runeCount := len([]rune(plain))
+		if runeCount > testWidth {
+			t.Errorf("line exceeds %d runes (%d): %s", testWidth, runeCount, plain)
+		}
+	}
+}
+
+// stripAnsi removes ANSI escape sequences for measuring plain text width.
+func stripAnsi(s string) string {
+	var out strings.Builder
+	inEsc := false
+	for _, r := range s {
+		if r == '\033' {
+			inEsc = true
+			continue
+		}
+		if inEsc {
+			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') {
+				inEsc = false
+			}
+			continue
+		}
+		out.WriteRune(r)
+	}
+	return out.String()
+}
+
 // TestExtractRows verifies the extractRows helper handles different data shapes.
 func TestExtractRows(t *testing.T) {
 	t.Run("slice of any", func(t *testing.T) {
